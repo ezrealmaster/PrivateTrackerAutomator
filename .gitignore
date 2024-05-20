@@ -1,0 +1,10 @@
+/logs/
+/config.yml
+/test.yml
+
+anon.session
+anon.session-journal
+/src/anon.session
+/src/anon.session-journal
+
+.idea

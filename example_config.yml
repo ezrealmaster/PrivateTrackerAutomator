@@ -1,0 +1,77 @@
+client:
+  name: "qbittorrent"
+  host: "http://192.168.1.2:8080/"
+  username: "admin"
+  password: "adminpassword"
+
+telegramlistener:
+  api_id: 1234567
+  api_hash: "1234qwertyuiop56789asdfghj"
+
+trackers:
+  hdolimpo:
+    base_url: "https://hd-olimpo.club/"
+    username: "myepicuser"
+    password: "xXx_myepic_pssword"
+    rsskey: "1234qwertyuiop56789asdfghj"
+    torrents_per_timeframe: [15, 70]
+    login_interval: 15
+    seed_time: 90
+    seed_ratio: 0
+  fearnopeer:
+    base_url: "https://fearnopeer.com/"
+    username: "myepicuser"
+    password: "xXx_myepic_pssword"
+    rsskey: "1234qwertyuiop56789asdfghj"
+    torrents_per_timeframe: [1, 90]
+    login_interval: 30
+    seed_time: 24
+    seed_ratio: 0
+  cinemaz:
+    base_url: "https://cinemaz.to/"
+    username: "myepicuser"
+    password: "xXx_myepic_pssword"
+    rsskey: "1234qwertyuiop56789asdfghj"
+    torrents_per_timeframe: [1, 120]
+    login_interval: 60
+    seed_time: "override"
+    seed_ratio: 0.93
+    time_or_ratio: True
+  xbytesv2:
+    base_url: "https://xbytesv2.li/"
+    username: "myepicuser"
+    password: "xXx_myepic_pssword"
+    torrents_per_timeframe: [2, 70]
+    login_interval: 30
+    seed_time: 90
+    seed_ratio: 1.03
+    time_or_ratio: True
+
+headers:
+  login:
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+    Accept-Language: es
+    Connection: keep-alive
+    Sec-Fetch-Dest: document
+    Sec-Fetch-Mode: navigate
+    Sec-Fetch-Site: none
+    Sec-Fetch-User: ?1
+    Upgrade-Insecure-Requests: '1'
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+      Gecko) Chrome/122.0.0.0 Safari/537.36
+    sec-ch-ua: '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"'
+    sec-ch-ua-mobile: ?0
+    sec-ch-ua-platform: '"Windows"'
+  unit3dthank:
+    Accept: text/html, application/xhtml+xml
+    Accept-Language: es,ca;q=0.9,en;q=0.8
+    Connection: keep-alive
+    Sec-Fetch-Dest: empty
+    Sec-Fetch-Mode: cors
+    Sec-Fetch-Site: same-origin
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+      Gecko) Chrome/123.0.0.0 Safari/537.36
+    X-Livewire: 'true'
+    sec-ch-ua: '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"'
+    sec-ch-ua-mobile: ?0
+    sec-ch-ua-platform: '"Windows"'
