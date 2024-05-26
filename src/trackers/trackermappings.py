@@ -7,8 +7,6 @@ TRACKER_CLASSES = {
     TrackerName.HDOLIMPO: UNIT3D,
     TrackerName.FEARNOPEER: UNIT3D,
     TrackerName.CINEMAZ: Cinemaz,
-    # TrackerName.XBYTESV2: Xbytesv2,
+    TrackerName.XBYTESV2: UNIT3D,
     TrackerName.TORRENTLAND: UNIT3D
 }
-
-initialized_trackers = {}

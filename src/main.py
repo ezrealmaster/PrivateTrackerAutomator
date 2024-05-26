@@ -3,37 +3,51 @@ import asyncio
 
 import yaml
 
+from initialized_variables import initialized_trackers
 import telegram as te
 import rssreader as rss
+from trackers.trackernames import TrackerName
+from trackers.trackermappings import TRACKER_CLASSES
 
-log.basicConfig(filename="logs/latest.log", filemode="w", encoding="utf-8", level=log.WARNING,
+
+log.basicConfig(filename="logs/latest.log", filemode="w", encoding="utf-8", level=log.INFO,
                 format="%(asctime)s %(levelname)s: %(message)s", datefmt="%c")
-
-
-async def print_chats(client):
-    async for dialog in client.iter_dialogs():
-        print(dialog.name, 'has ID', dialog.id)
 
 
 async def main():
     with open("config.yml") as f:
         config = yaml.safe_load(f)
 
+    # Initialize trackers
+    for tracker in config["trackers"]:
+        if (name := TrackerName(tracker)) in TRACKER_CLASSES:
+            initialized_trackers[name] = TRACKER_CLASSES[name](config["headers"], **config["trackers"][tracker], name=name)
+            log.info(f"Instantiated class for {tracker}.")
+        else:
+            log.warning(f"No class mapped to {tracker}")
+
+    # Initialize LoginScheduler
+
+    # Initialize update handlers
     telistener = te.TelegramListener(config["telegramlistener"])
     await telistener.client.start()
-    # await print_chats(telistener.client)
-    # exit()
-    telistener.add_handler(te.message_handler_hdolimpo)
-    telistener.add_handler(te.message_handler_torrentland)
-    async with asyncio.TaskGroup() as tg:
-        tg.create_task(telistener.client.run_until_disconnected())
-        # telegram message handler calls DownloadScheduler
+    for tracker in config["trackers"]:
+        if "handler" in config["trackers"][tracker] and config["trackers"][tracker]["handler"] == "telegram":
+            telistener.add_handler(getattr(te, f"message_handler_{tracker}"))
+            log.info(f"Added telegram handler to {tracker}.")
 
-        # LoginScheduler running on the back to avoid inacivity bans
-        # rssreader = rss.RSSReader("lol")
-        # rssreader2 = rss.RSSReader("lmao")
-        # tg.create_task(rssreader.poll_new_torrents())
-        # tg.create_task(rssreader2.poll_new_torrents())
+    # Initialize RSSReaders
+
+    async with asyncio.TaskGroup() as tg:
+        # Keep telegram handler alive
+        tg.create_task(telistener.client.run_until_disconnected())
+
+        # Keep RSSReaders alive
+        # for rssreader in rssreaders:
+        #     tg.create_task(rssreader.poll_new_torrents())
+
+        # Keep LoginScheduler alive
+
 
 
 if __name__ == "__main__":

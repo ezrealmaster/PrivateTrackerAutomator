@@ -6,7 +6,6 @@ from datetime import datetime
 import requests
 
 from src.clients.torrent import Torrent
-
 from .torrentinfo import TorrentInfo
 from .trackernames import TrackerName
 
@@ -43,10 +42,11 @@ class Tracker(ABC):
         :param username:
         :param password:
         :param torrents_per_timeframe: A tuple of ints (number of downloaded torrents, time limit in days)
-        :param login_interval:
+        :param login_interval: in days
         :param seed_time:
         :param seed_ratio:
-        :param time_or_ratio:
+        :param time_or_ratio: If True fulfilling any of the time or ratio requirements makes it safe to remove the
+        torrent. If False, both conditions must be fulfilled.
         """
         if seed_time == "override" or seed_ratio == "override":
             if type(self).can_remove == Tracker.can_remove:
@@ -87,5 +87,5 @@ class Tracker(ABC):
             return True
         return False
 
-    def download_action(self, torrent: TorrentInfo):
+    def post_download_action(self, torrent: TorrentInfo):
         pass

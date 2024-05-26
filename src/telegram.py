@@ -1,10 +1,11 @@
+import logging as log
 import re
 from datetime import datetime
 
 from telethon import TelegramClient, events
 
 import downloadscheduler
-from src.trackers.torrentinfo import TorrentInfo
+from trackers.torrentinfo import TorrentInfo
 from trackers import TrackerName
 
 
@@ -24,24 +25,24 @@ async def message_handler_hdolimpo(event):
     try:
         torrent_id = re.search(url_pattern, event.raw_text).group(1)
     except AttributeError as e:
-        print("Ignoring message:")
-        print(event.raw_text)
+        log.info("Ignoring message:")
+        log.info(event.raw_text)
         return
 
     name, *properties, uploader, info, link = event.raw_text.splitlines()
-    print(f"{name=}")
-    print(f"{properties=}")
-    print(f"{uploader=}")
-    print(f"{info=}")
-    print(f"{link=}")
+    log.info(f"{name=}")
+    log.info(f"{properties=}")
+    log.info(f"{uploader=}")
+    log.info(f"{info=}")
+    log.info(f"{link=}")
     # Download logic here...
     if "🎖🎖🎖 Premium 🎖🎖🎖" in properties:
-        print("Skipping premium torrent.")
+        log.info("Skipping premium torrent.")
         return
 
     freeleech = 0
     if "🔥🔥🔥 100% Free 🔥🔥🔥" in properties:
-        print("Is freeleech")
+        log.info("Is freeleech")
         freeleech = 100
 
     doubleup = False
@@ -56,22 +57,22 @@ async def message_handler_hdolimpo(event):
         hrless = True
 
     if freeleech or featured:
-        print(f"Downloading torrent {torrent_id}...")
+        log.info(f"Downloading torrent {torrent_id}...")
         try:
             size = re.search(r"- (\d+\.\d+) GiB", info).group(1)
         except Exception as e:
-            print("Could not match size.")
+            log.warning("Could not match size.")
             size = None
         torrent = TorrentInfo(name=name, tracker=TrackerName.HDOLIMPO, size=size, id=torrent_id, upload_date=datetime.now(),
                               freeleech=freeleech, doubleup=doubleup, featured=featured, hrless=hrless)
         downloadscheduler.new_torrent(torrent)
 
 
-@events.register(events.NewMessage(chats=[-1001203629747, "me"]))
+@events.register(events.NewMessage(chats=[-1001203629747]))
 async def message_handler_torrentland(event):
-    print(event.message.entities[0].url)
+    log.info(event.message.entities[0].url)
 
 
-@events.register(events.NewMessage(chats=[-1001279197242, "me"]))
+@events.register(events.NewMessage(chats=[-1001279197242]))
 async def message_handler_xbytesv2(event):
-    print(event.message.entities[0].url)
+    log.info(event.message.entities[0].url)

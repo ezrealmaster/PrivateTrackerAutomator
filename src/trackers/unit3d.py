@@ -45,7 +45,7 @@ class UNIT3D(Tracker):
             print(r.text)
             raise RuntimeError("Failed login")
 
-    def download_action(self, torrent: TorrentInfo):
+    def post_download_action(self, torrent: TorrentInfo):
         self.thank(torrent.id)
 
     def thank(self, torrent_id):

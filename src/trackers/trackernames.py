@@ -7,3 +7,4 @@ class TrackerName(Enum):
     CINEMAZ = "cinemaz"
     XBYTESV2 = "xbytesv2"
     TORRENTLAND = "torrentland"
+    DIVTEAM = "divteam"
