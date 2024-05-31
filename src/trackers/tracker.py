@@ -1,11 +1,12 @@
 import datetime
+from datetime import datetime
 from abc import ABC, abstractmethod
 from collections import deque
-from datetime import datetime
 
 import requests
 
 from src.clients.torrent import Torrent
+
 from .torrentinfo import TorrentInfo
 from .trackernames import TrackerName
 
@@ -64,7 +65,7 @@ class Tracker(ABC):
         # Inactivity rules
         self.torrents_per_timeframe = torrents_per_timeframe
 
-        self.log_in_every_days = login_interval
+        self.login_interval = login_interval
 
         # Seeding rules
         self.seed_time = seed_time
@@ -74,8 +75,19 @@ class Tracker(ABC):
         self.download_history = DownloadHistory()
         self.session = requests.Session()
 
+    def requirements_fulfilled(self, torrents_per_timeframe=None):
+        if torrents_per_timeframe is not None:
+            dl_requirement, time_limit = torrents_per_timeframe
+        else:
+            dl_requirement, time_limit = self.torrents_per_timeframe
+        return self.download_history.downloads_last_x_days(time_limit) >= dl_requirement
+
     @abstractmethod
     def login(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_download_url(self, torrent: TorrentInfo) -> tuple[str, str]:
         raise NotImplementedError()
 
     def can_remove(self, torrent: Torrent):

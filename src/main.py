@@ -3,9 +3,10 @@ import asyncio
 
 import yaml
 
-from initialized_variables import initialized_trackers
+from initialized_variables import initialized_trackers, config
 import telegram as te
 import rssreader as rss
+from loginscheduler import LoginScheduler
 from trackers.trackernames import TrackerName
 from trackers.trackermappings import TRACKER_CLASSES
 
@@ -15,9 +16,6 @@ log.basicConfig(filename="logs/latest.log", filemode="w", encoding="utf-8", leve
 
 
 async def main():
-    with open("config.yml") as f:
-        config = yaml.safe_load(f)
-
     # Initialize trackers
     for tracker in config["trackers"]:
         if (name := TrackerName(tracker)) in TRACKER_CLASSES:
@@ -27,6 +25,7 @@ async def main():
             log.warning(f"No class mapped to {tracker}")
 
     # Initialize LoginScheduler
+    loginscheduler = LoginScheduler(initialized_trackers)
 
     # Initialize update handlers
     telistener = te.TelegramListener(config["telegramlistener"])
@@ -47,7 +46,7 @@ async def main():
         #     tg.create_task(rssreader.poll_new_torrents())
 
         # Keep LoginScheduler alive
-
+        tg.create_task(loginscheduler.run())
 
 
 if __name__ == "__main__":

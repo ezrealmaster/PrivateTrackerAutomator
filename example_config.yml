@@ -1,3 +1,8 @@
+required_free_space: 100
+unfulfilled_reserved_space: 40
+min_time_until_ban: 10
+surplus_stop_coef: 1.3
+
 client:
   name: "qbittorrent"
   host: "http://192.168.1.2:8080/"
@@ -14,7 +19,7 @@ trackers:
     username: "myepicuser"
     password: "xXx_myepic_pssword"
     rsskey: "1234qwertyuiop56789asdfghj"
-    torrents_per_timeframe: [15, 70]
+    torrents_per_timeframe: [15, 90]
     login_interval: 15
     seed_time: 90
     seed_ratio: 0
@@ -41,7 +46,7 @@ trackers:
     base_url: "https://xbytesv2.li/"
     username: "myepicuser"
     password: "xXx_myepic_pssword"
-    torrents_per_timeframe: [2, 70]
+    torrents_per_timeframe: [2, 60]
     login_interval: 30
     seed_time: 90
     seed_ratio: 1.03

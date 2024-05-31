@@ -1,6 +1,7 @@
 import json
 import time
 import copy
+import logging as log
 
 from bs4 import BeautifulSoup
 
@@ -22,10 +23,11 @@ class UNIT3D(Tracker):
         self.headers_thank = headers["unit3dthank"]
 
     def login(self):
+        log.info(f"Logging in into {self.name.value}.")
         self.session.cookies.clear()
         self.session.cookies.set("laravel_cookie_consent", "1", domain=self.base_url.strip("/").split("/")[-1])
         r = self.session.get(self.login_page, headers=self.headers_login)
-        print("login page get:", r)
+        log.info("Log in page sent response:", r)
         time.sleep(1)
         soup = BeautifulSoup(r.content, "lxml")
         token = soup.form.find('input', attrs={'name': '_token', 'type': 'hidden'})['value']
@@ -39,11 +41,16 @@ class UNIT3D(Tracker):
         with open("logs/login_page.html", "w", encoding="utf-8") as f:
             f.write(BeautifulSoup(r.content, "lxml").prettify())
         if r.status_code == 200:
-            print("Success.")
+            log.info("Success.")
         else:
-            print(r)
-            print(r.text)
+            log.warning(r)
+            log.warning(r.text)
             raise RuntimeError("Failed login")
+
+    def get_download_url(self, torrent: TorrentInfo):
+        download_url = urljoin(self.torrent_page, "download", torrent.id)
+        cookie = self.session.cookies.get_dict()["laravel_session"]
+        return download_url, "laravel_session=" + cookie
 
     def post_download_action(self, torrent: TorrentInfo):
         self.thank(torrent.id)
@@ -53,7 +60,7 @@ class UNIT3D(Tracker):
         torrent_page = urljoin(self.torrent_page, torrent_id)
         r = self.session.get(torrent_page, headers=self.headers_login, allow_redirects=False)
         if r.status_code == 302 and r.headers["location"] == self.login_page:
-            print("Need to log in...")
+            log.info("Need to log in...")
             self.login()
             r = self.session.get(torrent_page, headers=self.headers_login, allow_redirects=False)
         soup = BeautifulSoup(r.content, "lxml")
@@ -101,8 +108,8 @@ class UNIT3D(Tracker):
             r = self.session.post(urljoin(self.base_url, "livewire/update"), json=payload,
                                   headers=headers)
         if r.status_code == 200:
-            print(f"Successfully thanked torrent {torrent_page}.")
+            log.info(f"Successfully thanked torrent {torrent_page}.")
         else:
-            print(r)
-            print(r.text)
+            log.warning(r)
+            log.warning(r.text)
             raise RuntimeError(f"Could not thank {torrent_page}.")

@@ -66,11 +66,15 @@ class qBittorrent(object):
             return self._session.post(self._host + 'api/v2/torrents/add',
                                       data={"urls": url, "category": category})
 
+        def add_torrent_with_cookie(self, url, category, cookie):
+            return self._session.post(self._host + 'api/v2/torrents/add',
+                                      data={"urls": url, "category": category, "cookie": cookie})
+
         def add_category(self, category):
             return self._session.post(self._host + 'api/v2/torrents/createCategory',
                                       data={"category": category})
 
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, **kwargs):
         # Torrents list cache
         self._torrents_list_cache = []
         self._refresh_cycle = 30
@@ -216,8 +220,11 @@ class qBittorrent(object):
         # So we consider all of them as successful.
         return torrent_hash_list, []
 
-    def add_torrent(self, url, category):
-        request = self._request_handler.add_torrent(url, category)
+    def add_torrent(self, url, category, cookie=None):
+        if cookie:
+            request = self._request_handler.add_torrent_with_cookie(url, category, cookie)
+        else:
+            request = self._request_handler.add_torrent(url, category)
         if request.status_code != 200:
             return [], [{
                 'url': url,

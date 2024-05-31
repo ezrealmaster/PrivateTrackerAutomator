@@ -7,6 +7,7 @@ from telethon import TelegramClient, events
 import downloadscheduler
 from trackers.torrentinfo import TorrentInfo
 from trackers import TrackerName
+from src.utils import gib_to_bytes
 
 
 class TelegramListener:
@@ -59,7 +60,7 @@ async def message_handler_hdolimpo(event):
     if freeleech or featured:
         log.info(f"Downloading torrent {torrent_id}...")
         try:
-            size = re.search(r"- (\d+\.\d+) GiB", info).group(1)
+            size = gib_to_bytes(float(re.search(r"- (\d+\.\d+) GiB", info).group(1)))
         except Exception as e:
             log.warning("Could not match size.")
             size = None

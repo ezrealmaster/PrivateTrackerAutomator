@@ -2,6 +2,7 @@ import math
 
 from src.utils import urljoin, bytes_to_gib
 from src.clients.torrent import Torrent
+from . import TorrentInfo
 
 from .tracker import Tracker
 
@@ -28,6 +29,9 @@ class Cinemaz(Tracker):
 
     def login(self):
         print("Cinemaz login...")
+
+    def get_download_url(self, torrent: TorrentInfo):
+        print('Cinemaz download...')
 
     def can_remove(self, torrent: Torrent):
         _time = seed_time(torrent)
