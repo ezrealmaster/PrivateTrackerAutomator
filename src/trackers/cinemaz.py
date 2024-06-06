@@ -23,12 +23,13 @@ class Cinemaz(Tracker):
         super().__init__(**kwargs)
 
         self.login_page = urljoin(self.base_url, "auth", "login")
-        self.torrent_page = urljoin(self.base_url, "torrent")
+        self.torrent_page = urljoin(self.base_url, "torrent")  # Will redirect when requesting torrent/id
 
         self.headers_login = headers["login"]
 
     def login(self):
         print("Cinemaz login...")
+        # TODO: Cinemaz login and download
 
     def get_download_url(self, torrent: TorrentInfo):
         print('Cinemaz download...')

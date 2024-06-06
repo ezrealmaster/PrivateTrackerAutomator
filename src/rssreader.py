@@ -6,16 +6,17 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 
+def parse_date(datestr):
+    return datetime.strptime(datestr, "%a, %d %b %Y %H:%M:%S %z")
+
+
 class RSSReader:
     def __init__(self, rss_feed):
         self.rss_feed = rss_feed
 
         feed = self.get_feed_soup()
-        self.last_post_date = self.parse_date(feed.pubDate.string)
-        log.debug(f"RSSReader initialized. Last post: {self.last_post_date}")
-
-    def parse_date(self, datestr):
-        return datetime.strptime(datestr, "%a, %d %b %Y %H:%M:%S %z")
+        self.last_post_date = parse_date(feed.pubDate.string)
+        log.info(f"RSSReader initialized. Last post: {self.last_post_date}")
 
     def get_feed_soup(self):
         while True:
@@ -27,12 +28,13 @@ class RSSReader:
         return BeautifulSoup(r.content, "lxml")
 
     def poll_for_new(self):
+        # TODO: async rssreader
         feed = self.get_feed_soup()
 
         new_posts_id = []
         new_last_date = None
         for item in feed.findAll("item"):
-            item_date = self.parse_date(item.pubDate.string)
+            item_date = parse_date(item.pubDate.string)
             if item_date > self.last_post_date:
                 log.debug(f"Object with id {item.guid.string} posted at: ´{item_date}")
                 new_posts_id.append(str(item.guid.string))

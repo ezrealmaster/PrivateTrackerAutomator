@@ -5,9 +5,15 @@ import yaml
 import telegram as te
 
 
-async def print_chats(client):
+async def print_chats(client, *args):
     async for dialog in client.iter_dialogs():
         print(dialog.name, 'has ID', dialog.id)
+
+
+async def print_chat(client, chat):
+    async for message in client.iter_messages(chat):
+        sender = await message.get_sender()
+        print(message.id, sender, message.text)
 
 
 async def main():

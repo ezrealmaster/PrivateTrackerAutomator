@@ -27,7 +27,7 @@ class UNIT3D(Tracker):
         self.session.cookies.clear()
         self.session.cookies.set("laravel_cookie_consent", "1", domain=self.base_url.strip("/").split("/")[-1])
         r = self.session.get(self.login_page, headers=self.headers_login)
-        log.info("Log in page sent response:", r)
+        log.info("Log in page sent response: %s", r)
         time.sleep(1)
         soup = BeautifulSoup(r.content, "lxml")
         token = soup.form.find('input', attrs={'name': '_token', 'type': 'hidden'})['value']
@@ -42,6 +42,7 @@ class UNIT3D(Tracker):
             f.write(BeautifulSoup(r.content, "lxml").prettify())
         if r.status_code == 200:
             log.info("Success.")
+            super().login()
         else:
             log.warning(r)
             log.warning(r.text)
@@ -49,7 +50,12 @@ class UNIT3D(Tracker):
 
     def get_download_url(self, torrent: TorrentInfo):
         download_url = urljoin(self.torrent_page, "download", torrent.id)
-        cookie = self.session.cookies.get_dict()["laravel_session"]
+        try:
+            cookie = self.session.cookies.get_dict()["laravel_session"]
+        except KeyError:
+            # log in for the first time
+            self.login()
+            cookie = self.session.cookies.get_dict()["laravel_session"]
         return download_url, "laravel_session=" + cookie
 
     def post_download_action(self, torrent: TorrentInfo):

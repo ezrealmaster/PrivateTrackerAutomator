@@ -4,13 +4,14 @@ import requests
 
 from .torrent import Torrent
 
+
 # Class adapted from https://github.com/jerrymakesjelly/autoremove-torrents
 class qBittorrent(object):
     # API Handler for v2
     class qBittorrentAPIHandlerV2(object):
-        def __init__(self, host):
+        def __init__(self, host: str):
             # Host
-            self._host = host
+            self._host = host.rstrip("/")
             # Requests Session
             self._session = requests.Session()
 
@@ -63,15 +64,15 @@ class qBittorrent(object):
                                      params={'hashes': '|'.join(torrent_hash_list), 'deleteFiles': True})
 
         def add_torrent(self, url, category):
-            return self._session.post(self._host + 'api/v2/torrents/add',
+            return self._session.post(self._host + '/api/v2/torrents/add',
                                       data={"urls": url, "category": category})
 
         def add_torrent_with_cookie(self, url, category, cookie):
-            return self._session.post(self._host + 'api/v2/torrents/add',
+            return self._session.post(self._host + '/api/v2/torrents/add',
                                       data={"urls": url, "category": category, "cookie": cookie})
 
         def add_category(self, category):
-            return self._session.post(self._host + 'api/v2/torrents/createCategory',
+            return self._session.post(self._host + '/api/v2/torrents/createCategory',
                                       data={"category": category})
 
     def __init__(self, host, username, password, **kwargs):
@@ -179,7 +180,7 @@ class qBittorrent(object):
                 return torrent_obj
 
     # Get free space
-    def remote_free_space(self, path):
+    def remote_free_space(self):
         status = self._request_handler.server_state().json()['server_state']
 
         # There is no free space data in qBittorrent 3.x

@@ -1,41 +1,43 @@
+import logging as log
 import asyncio
 import datetime as dt
 from datetime import datetime
-import logging as log
-
+import pickle
 from trackers import Tracker
 
 
 class LoginScheduler:
-    def __init__(self, trackers: list[Tracker]):
+    def __init__(self):
+        self.trackers = None
+        self.tracker_names = None
+        self.save_file = None
+
+    def initialize(self, trackers: list[Tracker], save_file=None):
+        log.info("LoginScheduler: Initializing with trackers and save file.")
         self.trackers = trackers
 
-        self.last_login = []
-        for i, tracker in enumerate(trackers):
-            self.last_login[i] = datetime.now()
+        self.save_file = save_file
+        if save_file.exists():
+            with open(self.save_file, "rb") as f:
+                last_login = pickle.load(f)
+            for tracker in self.trackers:
+                try:
+                    tracker.last_login = last_login[tracker.name]
+                    log.info(f"LoginScheduler: Loaded last login for {tracker.name}: {tracker.last_login}.")
+                except KeyError:
+                    log.warning(f"LoginScheduler: No last login found for {tracker.name}.")
+
+    def save_state(self):
+        save_dict = {tracker.name: tracker.last_login for tracker in self.trackers}
+        with open(self.save_file, "wb") as f:
+            pickle.dump(save_dict, f)
 
     async def run(self):
         while True:
-            # Calculate next login time
-            next_is = []
-            next_time: datetime | None = None
-            for i, last_login in enumerate(self.last_login):
-                new_time = last_login + dt.timedelta(days=self.trackers[i].login_interval)
-                if next_time is None or new_time < next_time:
-                    next_is = [i]
-                    next_time = new_time
-                elif new_time == next_time:
-                    next_is.append(i)
-            log.info("Next log in time:", next_time)
-            log.info("Next trackers to log in:", [self.trackers[i] for i in next_is])
+            now = datetime.now()
+            for tracker in self.trackers:
+                if now - tracker.last_login > dt.timedelta(tracker.login_interval):
+                    log.info("LoginScheduler: Initiating login.")
+                    tracker.login()
 
-            await asyncio.sleep((next_time - datetime.now()).total_seconds())
-
-            for i in next_is:
-                try:
-                    self.trackers[i].login()
-                    self.last_login[i] = datetime.now()
-                except RuntimeError as e:
-                    log.exception(f"Exception when logging in to {self.trackers[i].name.value}. Waiting 30 minutes to retry.", e)
-                    self.last_login[i] = self.last_login[i] + dt.timedelta(minutes=30)
-
+            await asyncio.sleep(60)

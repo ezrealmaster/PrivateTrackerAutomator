@@ -1,9 +1,11 @@
-import datetime
+import datetime as dt
 from datetime import datetime
 from abc import ABC, abstractmethod
 from collections import deque
+import pickle
 
 import requests
+import requests.cookies
 
 from src.clients.torrent import Torrent
 
@@ -22,11 +24,11 @@ class DownloadHistory:
 
     def downloads_last_x_days(self, days):
         return sum(
-            1 for torrent in self.history if torrent.download_date > datetime.now() - datetime.timedelta(days=days))
+            1 for torrent in self.history if torrent.download_date > datetime.now() - dt.timedelta(days=days))
 
     def time_until_ban(self, torrents_per_timeframe):
         n_downs, day_limit = torrents_per_timeframe
-        limit_date: datetime = self.history[-n_downs].download_date + datetime.timedelta(days=day_limit)
+        limit_date: datetime = self.history[-n_downs].download_date + dt.timedelta(days=day_limit)
         timedelta = limit_date - datetime.now()
         hours, seconds = divmod(timedelta.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
@@ -34,14 +36,15 @@ class DownloadHistory:
 
 
 class Tracker(ABC):
-    def __init__(self, name: TrackerName, base_url, username, password, torrents_per_timeframe: tuple[int, int],
-                 login_interval: int, seed_time, seed_ratio, time_or_ratio=False, **kwargs):
+    def __init__(self, name: TrackerName, base_url, torrents_per_timeframe: tuple[int, int],
+                 login_interval: int, seed_time, seed_ratio, username=None, password=None, cookie=None, time_or_ratio=False, save_file=None, login_scheduler=None, **kwargs):
         """
         Tracker definition. Includes inactivity and seeding rules, as well as post-download actions.
         :param name:
         :param base_url:
         :param username:
         :param password:
+        :param cookie:
         :param torrents_per_timeframe: A tuple of ints (number of downloaded torrents, time limit in days)
         :param login_interval: in days
         :param seed_time:
@@ -72,19 +75,41 @@ class Tracker(ABC):
         self.seed_ratio = seed_ratio
         self.time_or_ratio = time_or_ratio
 
-        self.download_history = DownloadHistory()
+        self.save_file = save_file
+        if self.save_file.exists():
+            with open(self.save_file, "rb") as f:
+                history = pickle.load(f)
+            self.download_history = history
+        else:
+            self.download_history = DownloadHistory()
+        self.last_login = datetime.now()
+        self.login_scheduler = login_scheduler
         self.session = requests.Session()
+        self.cookie = None
+        if cookie is not None:
+            self.cookie = {}
+            for cook in cookie.split(';'):
+                k, v = cook.strip().split('=')
+                self.cookie[k] = v
+            for cookie in self.cookie:
+                jar = requests.cookies.cookiejar_from_dict(self.cookie)
+                self.session.cookies = jar
 
-    def requirements_fulfilled(self, torrents_per_timeframe=None):
+    def save_history(self):
+        with open(self.save_file, "wb") as f:
+            pickle.dump(self.download_history, f)
+
+    def requirements_fulfilled(self, torrents_per_timeframe=None, min_time_until_ban=0):
         if torrents_per_timeframe is not None:
             dl_requirement, time_limit = torrents_per_timeframe
         else:
             dl_requirement, time_limit = self.torrents_per_timeframe
-        return self.download_history.downloads_last_x_days(time_limit) >= dl_requirement
+        return self.download_history.downloads_last_x_days(time_limit) >= dl_requirement and self.download_history.time_until_ban(torrents_per_timeframe)[0] >= min_time_until_ban
 
     @abstractmethod
     def login(self):
-        raise NotImplementedError()
+        self.last_login = datetime.now()
+        self.login_scheduler.save_state()
 
     @abstractmethod
     def get_download_url(self, torrent: TorrentInfo) -> tuple[str, str]:

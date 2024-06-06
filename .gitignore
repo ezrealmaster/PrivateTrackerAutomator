@@ -3,6 +3,7 @@
 /config.yml
 /test.yml
 
+/state/
 anon.session
 anon.session-journal
 /src/anon.session

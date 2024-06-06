@@ -8,3 +8,4 @@ class TrackerName(Enum):
     XBYTESV2 = "xbytesv2"
     TORRENTLAND = "torrentland"
     DIVTEAM = "divteam"
+    REDBITS = "redbits"

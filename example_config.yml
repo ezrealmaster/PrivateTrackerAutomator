@@ -1,6 +1,6 @@
 required_free_space: 100
 unfulfilled_reserved_space: 40
-min_time_until_ban: 10
+min_time_until_ban: 30
 surplus_stop_coef: 1.3
 
 client:
@@ -19,7 +19,7 @@ trackers:
     username: "myepicuser"
     password: "xXx_myepic_pssword"
     rsskey: "1234qwertyuiop56789asdfghj"
-    torrents_per_timeframe: [15, 90]
+    torrents_per_timeframe: [15, 80]
     login_interval: 15
     seed_time: 90
     seed_ratio: 0

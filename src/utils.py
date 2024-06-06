@@ -22,6 +22,9 @@ def bytes_to_gib(bytes):
 def gib_to_bytes(gib):
     return gib * (1 << 30)
 
+def mib_to_bytes(gib):
+    return gib * (1 << 20)
+
 def bytes_to_gb(bytes):
     return bytes / 1e9
 
