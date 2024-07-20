@@ -54,6 +54,7 @@ class UNIT3D(Tracker):
             cookie = self.session.cookies.get_dict()["laravel_session"]
         except KeyError:
             # log in for the first time
+            # TODO: always try relogin, check if login is necessary inside login() function
             self.login()
             cookie = self.session.cookies.get_dict()["laravel_session"]
         return download_url, "laravel_session=" + cookie

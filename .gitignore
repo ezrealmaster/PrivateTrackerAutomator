@@ -4,6 +4,7 @@
 /test.yml
 
 /state/
+/temp/
 anon.session
 anon.session-journal
 /src/anon.session

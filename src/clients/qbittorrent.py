@@ -42,8 +42,8 @@ class qBittorrent(object):
             return self._session.get(self._host + '/api/v2/sync/maindata')
 
         # Get torrent list
-        def torrent_list(self):
-            return self._session.get(self._host + '/api/v2/torrents/info')
+        def torrent_list(self, sort=None):
+            return self._session.get(self._host + '/api/v2/torrents/info', params={"sort": sort})
 
         # Get torrent's generic properties
         def torrent_generic_properties(self, torrent_hash):
@@ -52,6 +52,12 @@ class qBittorrent(object):
         # Get torrent's tracker
         def torrent_trackers(self, torrent_hash):
             return self._session.get(self._host + '/api/v2/torrents/trackers', params={'hash': torrent_hash})
+
+        def torrent_peers(self, torrent_hash, rid=None):
+            if not rid:
+                return self._session.get(self._host + '/api/v2/sync/torrentPeers', params={'hash': torrent_hash})
+            else:
+                return self._session.get(self._host + '/api/v2/sync/torrentPeers', params={'hash': torrent_hash, 'rid': rid})
 
         # Batch Delete torrents
         def delete_torrents(self, torrent_hash_list):

@@ -7,7 +7,7 @@ from utils import gib_to_bytes
 from initialized_variables import initialized_trackers, torrent_client, config
 
 
-def new_torrent(torrent: TorrentInfo):
+def new_torrent(torrent: TorrentInfo, force_download=False):
     log.info("Deciding download for torrent:\n%s", torrent)
 
     # Download logic...
@@ -43,6 +43,8 @@ def new_torrent(torrent: TorrentInfo):
             log.info("Skipping torrent. Reason: Surplus limit reached.")
 
     # TODO: add notifications for downloads
+    if force_download:
+        download = True
     if download:
         log.info("Downloading torrent.")
         url, cookie = tracker.get_download_url(torrent)
@@ -50,6 +52,7 @@ def new_torrent(torrent: TorrentInfo):
         if len(bad) != 0:
             log.error(bad[0])
             log.error("Could not download torrent: %s", torrent)
+            return False
         else:
             torrent.download_date = datetime.now()
             tracker.download_history.add(torrent)
@@ -61,3 +64,4 @@ def new_torrent(torrent: TorrentInfo):
                 log.error("Could not perform post-download action:")
                 log.error(e)
                 log.error(traceback.format_exc())
+            return good

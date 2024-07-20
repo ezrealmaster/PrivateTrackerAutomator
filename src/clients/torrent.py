@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 
 # Class adapted from https://github.com/jerrymakesjelly/autoremove-torrents
-@dataclass()
+@dataclass
 class Torrent:
     hash = None
     name = None
