@@ -2,6 +2,8 @@ required_free_space: 100
 unfulfilled_reserved_space: 40
 min_time_until_ban: 30
 surplus_stop_coef: 1.3
+max_torrent_size: 35
+download_daily_limit: 5
 
 client:
   name: "qbittorrent"

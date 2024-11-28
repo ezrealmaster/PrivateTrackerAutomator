@@ -13,14 +13,14 @@ async def print_chats(client, *args):
 async def print_chat(client, chat):
     async for message in client.iter_messages(chat):
         sender = await message.get_sender()
-        print(message.id, sender, message.text)
+        print(message.id, f"{sender.id=}", f"{sender.first_name} {sender.last_name}", f"{sender.username if sender.username else sender.usernames}", message.text)
 
 
 async def main():
     with open("config.yml") as f:
         config = yaml.safe_load(f)
 
-    telistener = te.TelegramListener(config["telegramlistener"])
+    telistener = te.TelegramListener(config["telegramlistener"], session_name='secondary')
     await telistener.client.start()
     await print_chats(telistener.client)
 

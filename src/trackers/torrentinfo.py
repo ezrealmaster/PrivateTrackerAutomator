@@ -11,7 +11,7 @@ class TorrentInfo:
     size: int = None
 
     # Pre-download info
-    id: int = None
+    id: str = None
     upload_date: datetime = None
     freeleech: int = None
     doubleup: bool = None

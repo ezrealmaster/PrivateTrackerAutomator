@@ -17,10 +17,21 @@ def new_torrent(torrent: TorrentInfo, force_download=False):
         log.warning("Can't detect free space. Download won't start")
     required_free_space = gib_to_bytes(config["required_free_space"])
     unfulfilled_reserved_space = gib_to_bytes(config["unfulfilled_reserved_space"])
+    max_torrent_size = gib_to_bytes(config["max_torrent_size"])
+
+    if force_download:
+        if torrent.size is None:
+            torrent.size = 0
+        if free_space is None:
+            free_space = 1e12
 
     download = False
+    if tracker.daily_limit_reached(config["download_daily_limit"]):
+        log.info("Skipping torrent. Reason: Daily limit reached.")
+    elif torrent.size > max_torrent_size:
+        log.info("Skipping torrent. Reason: Exceeds max size.")
     # If enough space left for download:
-    if torrent.size < free_space - required_free_space:
+    elif torrent.size < free_space - required_free_space:
         # If torrent goal in time limit not fulfilled or minimum constraint on ban time: download
         # (you would already be banned)
         if not tracker.requirements_fulfilled(min_time_until_ban=config["min_time_until_ban"]):
@@ -46,11 +57,12 @@ def new_torrent(torrent: TorrentInfo, force_download=False):
     if force_download:
         download = True
     if download:
-        log.info("Downloading torrent.")
+        log.info("Sending torrent to download client.")
+        log.getLogger("output").info(f"Downloading torrent ({torrent.tracker.value}): {torrent.name}")
         url, cookie = tracker.get_download_url(torrent)
         good, bad = torrent_client.add_torrent(url, "Auto" + tracker.name.value.capitalize(), cookie)
-        if len(bad) != 0:
-            log.error(bad[0])
+        log.info(good, bad)
+        if len(bad) != 0 or good[0]["contents"] != "Ok.":
             log.error("Could not download torrent: %s", torrent)
             return False
         else:
@@ -61,7 +73,5 @@ def new_torrent(torrent: TorrentInfo, force_download=False):
             try:
                 tracker.post_download_action(torrent)
             except Exception as e:
-                log.error("Could not perform post-download action:")
-                log.error(e)
-                log.error(traceback.format_exc())
+                log.error("Could not perform post-download action.", exc_info=e)
             return good

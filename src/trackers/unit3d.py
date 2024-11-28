@@ -5,7 +5,7 @@ import logging as log
 
 from bs4 import BeautifulSoup
 
-from src.utils import urljoin, id_generator
+from utils import urljoin, id_generator
 
 from .trackernames import TrackerName
 from .torrentinfo import TorrentInfo
@@ -48,6 +48,63 @@ class UNIT3D(Tracker):
             log.warning(r.text)
             raise RuntimeError("Failed login")
 
+    def get_torrent_info(self, torrent_id: str):
+        # Only used in Redbits telegram
+        torrent_id = int(torrent_id)
+        torrent_page = urljoin(self.torrent_page, torrent_id)
+        r = self.session.get(torrent_page, headers=self.headers_login, allow_redirects=False)
+        if r.status_code == 302 and r.headers["location"] == self.login_page:
+            log.info("Need to log in...")
+            self.login()
+            r = self.session.get(torrent_page, headers=self.headers_login, allow_redirects=False)
+        soup = BeautifulSoup(r.content, "lxml")
+        with open("logs/torrent_page.html", "w", encoding="utf-8") as f:
+            f.write(soup.prettify())
+
+        result = None
+        count = 0
+        while not result and count < 3:
+            match count:
+                case 0:
+                    result = soup.find("span", attrs={"title": "<p>100% Gratis</p>"})
+                case 1:
+                    result = soup.find("span", attrs={"title": "<p>100% Free</p>"})
+                case 2:
+                    result = soup.find("i", attrs={"title": "100% Free"})
+            count += 1
+        if result is None:
+            freeleech = 0
+        else:
+            freeleech = 100
+        return freeleech
+
+    def search(self, name: str):
+        r = self.session.get(self.torrent_page, params={"perPage": 25, "name": name}, headers=self.headers_login, allow_redirects=False)
+        if r.status_code == 302 and r.headers["location"] == self.login_page:
+            log.info("Need to log in...")
+            self.login()
+            r = self.session.get(self.torrent_page, params={"perPage": 25, "name": name}, headers=self.headers_login, allow_redirects=False)
+        soup = BeautifulSoup(r.content, "lxml")
+        with open("logs/torrent_search.html", "w", encoding="utf-8") as f:
+            f.write(soup.prettify())
+
+        result = None
+        count = 0
+        while not result and count < 2:
+            match count:
+                case 0:
+                    result = soup.find("a", attrs={"class": "view-torrent"})
+                case 1:
+                    result = soup.find("a", attrs={"title": "<p>100% Free</p>"})
+            count += 1
+
+        if result is None:
+            return None
+
+        id = result["href"].rstrip("/").split("/")[-1]
+        return id
+
+
     def get_download_url(self, torrent: TorrentInfo):
         download_url = urljoin(self.torrent_page, "download", torrent.id)
         try:
@@ -62,7 +119,7 @@ class UNIT3D(Tracker):
     def post_download_action(self, torrent: TorrentInfo):
         self.thank(torrent.id)
 
-    def thank(self, torrent_id):
+    def thank(self, torrent_id: str):
         torrent_id = int(torrent_id)
         torrent_page = urljoin(self.torrent_page, torrent_id)
         r = self.session.get(torrent_page, headers=self.headers_login, allow_redirects=False)

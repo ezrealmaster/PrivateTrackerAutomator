@@ -2,6 +2,7 @@ from .trackernames import TrackerName
 from .unit3d import UNIT3D
 from .cinemaz import Cinemaz
 from .divteam import Divteam
+from .sportscult import Sportscult
 
 
 TRACKER_CLASSES = {
@@ -11,5 +12,6 @@ TRACKER_CLASSES = {
     TrackerName.XBYTESV2: UNIT3D,
     TrackerName.TORRENTLAND: UNIT3D,
     TrackerName.DIVTEAM: Divteam,
-    TrackerName.REDBITS: UNIT3D
+    TrackerName.REDBITS: UNIT3D,
+    TrackerName.SPORTSCULT: Sportscult
 }

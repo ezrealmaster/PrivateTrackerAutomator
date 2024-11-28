@@ -1,9 +1,13 @@
 import math
+import logging as log
 
-from src.utils import urljoin, bytes_to_gib
-from src.clients.torrent import Torrent
+import requests
+from bs4 import BeautifulSoup
+
+from utils import urljoin, bytes_to_gib
+from clients.torrent import Torrent
+
 from . import TorrentInfo
-
 from .tracker import Tracker
 
 
@@ -28,11 +32,26 @@ class Cinemaz(Tracker):
         self.headers_login = headers["login"]
 
     def login(self):
-        print("Cinemaz login...")
-        # TODO: Cinemaz login and download
+        log.info(f"Logging in into {self.name.value}.")
+        r = self.session.get(self.base_url, headers=self.headers_login, allow_redirects=False)
+        log.info("Log in page sent response: %s", r)
+        soup = BeautifulSoup(r.content, "lxml")
+        title = soup.find("h1", attrs={"class": "title"})
+        if title.string == "Welcome to CinemaZ":
+            log.getLogger("output").info("Cinemaz cookie is expired. Update config file and restart.")
+            log.warning("Cinemaz cookie is expired. Update config file and restart.")
+            self.auto_login = False
+            raise requests.exceptions.HTTPError("Cookie expired.")
+        elif len(title.contents) > 1 and title.contents[1] == " CinemaZ":
+            log.info("Success.")
+            super().login()
+        else:
+            log.warning(r)
+            log.warning(r.text)
+            raise RuntimeError("Failed login")
 
     def get_download_url(self, torrent: TorrentInfo):
-        print('Cinemaz download...')
+        log.getLogger("output").info('Cinemaz download...')
 
     def can_remove(self, torrent: Torrent):
         _time = seed_time(torrent)

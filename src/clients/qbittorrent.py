@@ -1,4 +1,6 @@
 import time
+import datetime as dt
+import logging as log
 
 import requests
 
@@ -57,7 +59,8 @@ class qBittorrent(object):
             if not rid:
                 return self._session.get(self._host + '/api/v2/sync/torrentPeers', params={'hash': torrent_hash})
             else:
-                return self._session.get(self._host + '/api/v2/sync/torrentPeers', params={'hash': torrent_hash, 'rid': rid})
+                return self._session.get(self._host + '/api/v2/sync/torrentPeers',
+                                         params={'hash': torrent_hash, 'rid': rid})
 
         # Batch Delete torrents
         def delete_torrents(self, torrent_hash_list):
@@ -87,14 +90,27 @@ class qBittorrent(object):
         self._refresh_cycle = 30
         self._refresh_time = 0
 
+        self._username = username
+        self._password = password
+
         # Request Handler
         self._request_handler = self.qBittorrentAPIHandlerV2(host)
-        self.login(username, password)
+
+    @property
+    def is_logged_in(self) -> bool:
+        try:
+            r = self._request_handler.client_version()
+            if r.status_code == 200:
+                return True
+            else:
+                return False
+        except Exception:
+            return False
 
     # Login to qBittorrent
-    def login(self, username, password):
+    def login(self):
         try:
-            request = self._request_handler.login(username, password)
+            request = self._request_handler.login(self._username, self._password)
         except Exception as exc:
             raise RuntimeError(str(exc))
 
@@ -122,15 +138,18 @@ class qBittorrent(object):
 
     # Get qBittorrent Version
     def version(self):
+        if not self.is_logged_in: self.login()
         request = self._request_handler.client_version()
         return ('qBittorrent %s' % request.text)
 
     # Get API version
     def api_version(self):
+        if not self.is_logged_in: self.login()
         return ('%s (%s)' % (self._request_handler.api_version().text, self._request_handler.api_major_version()))
 
     # Get Torrents List
     def torrents_list(self):
+        if not self.is_logged_in: self.login()
         # Request torrents list
         torrent_hash = []
         request = self._request_handler.torrent_list()
@@ -145,6 +164,7 @@ class qBittorrent(object):
 
     # Get Torrent Properties
     def torrent_properties(self, torrent_hash):
+        if not self.is_logged_in: self.login()
         if time.time() - self._refresh_time > self._refresh_cycle:  # Out of date
             self.torrents_list()
         for torrent in self._torrents_list_cache:
@@ -187,6 +207,7 @@ class qBittorrent(object):
 
     # Get free space
     def remote_free_space(self):
+        if not self.is_logged_in: self.login()
         status = self._request_handler.server_state().json()['server_state']
 
         # There is no free space data in qBittorrent 3.x
@@ -216,6 +237,7 @@ class qBittorrent(object):
     # Batch Remove Torrents
     # Return values: (success_hash_list, failed_list -> {hash: reason, ...})
     def remove_torrents(self, torrent_hash_list, remove_data=True):
+        if not self.is_logged_in: self.login()
         request = self._request_handler.delete_torrents_and_data(torrent_hash_list) if remove_data \
             else self._request_handler.delete_torrents(torrent_hash_list)
         if request.status_code != 200:
@@ -228,6 +250,7 @@ class qBittorrent(object):
         return torrent_hash_list, []
 
     def add_torrent(self, url, category, cookie=None):
+        if not self.is_logged_in: self.login()
         if cookie:
             request = self._request_handler.add_torrent_with_cookie(url, category, cookie)
         else:
@@ -236,12 +259,14 @@ class qBittorrent(object):
             return [], [{
                 'url': url,
                 'reason': 'The server responses HTTP %d.' % request.status_code,
+                'contents': request.text
             }]
-        return [url], []
+        return [{'url': url, 'contents': request.text}], []
 
     def create_category(self, category):
+        if not self.is_logged_in: self.login()
         request = self._request_handler.add_category(category)
         if request.status_code != 200:
-            print(request)
-            print(request.text)
-            print("Could not create category %d" % category)
+            log.getLogger("output").info(request)
+            log.getLogger("output").info(request.text)
+            log.getLogger("output").info("Could not create category %d" % category)

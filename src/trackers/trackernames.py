@@ -9,3 +9,4 @@ class TrackerName(Enum):
     TORRENTLAND = "torrentland"
     DIVTEAM = "divteam"
     REDBITS = "redbits"
+    SPORTSCULT = "sportscult"

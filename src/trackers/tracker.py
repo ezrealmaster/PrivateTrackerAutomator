@@ -3,11 +3,13 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 from collections import deque
 import pickle
+from pathlib import Path
+import logging as log
 
 import requests
 import requests.cookies
 
-from src.clients.torrent import Torrent
+from clients.torrent import Torrent
 
 from .torrentinfo import TorrentInfo
 from .trackernames import TrackerName
@@ -28,7 +30,13 @@ class DownloadHistory:
 
     def time_until_ban(self, torrents_per_timeframe):
         n_downs, day_limit = torrents_per_timeframe
-        limit_date: datetime = self.history[-n_downs].download_date + dt.timedelta(days=day_limit)
+        if len(self.history) == 0:
+            return 0, 0, 0, 0
+        elif len(self.history) >= n_downs:
+            limit_date: datetime = self.history[-n_downs].download_date + dt.timedelta(days=day_limit)
+        else:
+            limit_date: datetime = self.history[0].download_date + dt.timedelta(days=day_limit)
+            # TODO: incorrect logic
         timedelta = limit_date - datetime.now()
         hours, seconds = divmod(timedelta.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
@@ -52,6 +60,7 @@ class Tracker(ABC):
         :param time_or_ratio: If True fulfilling any of the time or ratio requirements makes it safe to remove the
         torrent. If False, both conditions must be fulfilled.
         """
+        assert save_file is not None
         if seed_time == "override" or seed_ratio == "override":
             if type(self).can_remove == Tracker.can_remove:
                 raise AssertionError("can_remove method has not been overriden.")
@@ -75,25 +84,30 @@ class Tracker(ABC):
         self.seed_ratio = seed_ratio
         self.time_or_ratio = time_or_ratio
 
-        self.save_file = save_file
+        self.save_file = Path(save_file)
         if self.save_file.exists():
             with open(self.save_file, "rb") as f:
                 history = pickle.load(f)
             self.download_history = history
         else:
+            log.getLogger("output").info(f"Warning: savefile {self.save_file} not found. Starting {self.name} with empty history.")
             self.download_history = DownloadHistory()
         self.last_login = datetime.now()
         self.login_scheduler = login_scheduler
         self.session = requests.Session()
-        self.cookie = None
+        self.set_session_cookies(cookie)
+        self.auto_login = True
+
+    def set_session_cookies(self, cookie):
         if cookie is not None:
-            self.cookie = {}
+            cookie_dict = {}
             for cook in cookie.split(';'):
                 k, v = cook.strip().split('=')
-                self.cookie[k] = v
-            for cookie in self.cookie:
-                jar = requests.cookies.cookiejar_from_dict(self.cookie)
-                self.session.cookies = jar
+                cookie_dict[k] = v
+            jar = requests.cookies.cookiejar_from_dict(cookie_dict)
+            self.session.cookies = jar
+        else:
+            self.session.cookies.clear()
 
     def save_history(self):
         with open(self.save_file, "wb") as f:
@@ -104,12 +118,21 @@ class Tracker(ABC):
             dl_requirement, time_limit = torrents_per_timeframe
         else:
             dl_requirement, time_limit = self.torrents_per_timeframe
-        return self.download_history.downloads_last_x_days(time_limit) >= dl_requirement and self.download_history.time_until_ban(torrents_per_timeframe)[0] >= min_time_until_ban
+        return self.download_history.downloads_last_x_days(time_limit) >= dl_requirement and self.download_history.time_until_ban([dl_requirement, time_limit])[0] >= min_time_until_ban
+
+    def daily_limit_reached(self, daily_limit):
+        return self.download_history.downloads_last_x_days(1) >= daily_limit
 
     @abstractmethod
     def login(self):
         self.last_login = datetime.now()
         self.login_scheduler.save_state()
+
+    def get_torrent_info(self, torrent_id: str):
+        pass
+
+    def search(self, name: str):
+        pass
 
     @abstractmethod
     def get_download_url(self, torrent: TorrentInfo) -> tuple[str, str]:

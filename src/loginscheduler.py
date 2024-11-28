@@ -3,6 +3,10 @@ import asyncio
 import datetime as dt
 from datetime import datetime
 import pickle
+from pathlib import Path
+
+import requests.exceptions
+
 from trackers import Tracker
 
 
@@ -16,8 +20,8 @@ class LoginScheduler:
         log.info("LoginScheduler: Initializing with trackers and save file.")
         self.trackers = trackers
 
-        self.save_file = save_file
-        if save_file.exists():
+        self.save_file = Path(save_file)
+        if self.save_file.exists():
             with open(self.save_file, "rb") as f:
                 last_login = pickle.load(f)
             for tracker in self.trackers:
@@ -36,8 +40,12 @@ class LoginScheduler:
         while True:
             now = datetime.now()
             for tracker in self.trackers:
+                if not tracker.auto_login:
+                    continue
                 if now - tracker.last_login > dt.timedelta(tracker.login_interval):
                     log.info("LoginScheduler: Initiating login.")
-                    tracker.login()
-
-            await asyncio.sleep(60)
+                    try:
+                        tracker.login()
+                    except requests.exceptions.HTTPError as e:
+                        log.exception(e)
+            await asyncio.sleep(1800)
